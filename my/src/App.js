@@ -1,129 +1,275 @@
 import { useEffect, useState } from "react";
 
-import logo from './logo.svg';
 import './App.css';
-import datahh from "./data_hh.json";
 
 function App() {
 
-  const [dataTable, setDataTable] = useState([]);
-  const [dataHH, setDataHH] = useState([]);
-  const [allPagesHH, setAllPagesHH] = useState();
-  const [allDataHH, setAllDataHH] = useState([]);
+	const [dataHH, setDataHH] = useState([]); //весь ответ
+	const [dataTable, setDataTable] = useState([]); //только вакансии из ответа
+	const [allPagesHH, setAllPagesHH] = useState(); //всего страниц
+	const [allDataHH, setAllDataHH] = useState([]);
+	const [sortedField, setSortedField] = useState("there"); //флаг для сортировки (направление)
 
-  const name = "кладовщик"
-
-  useEffect(() => {
-    fetch(`https://api.hh.ru/vacancies?clusters=true&text=${name}&area=1146&per_page=100&page=0&schedule=flyInFlyOut`) //5 id:81235130
-    // fetch('https://api.hh.ru/vacancies/81235130/similar_vacancies')
-      .then(res=> res.json())
-      .then(data => (setDataHH(data), setAllPagesHH(data.pages), setDataTable(data.items)))
-  }, [])
-
-  console.log(dataHH)
-
-  function clog() {
-    console.log('всего страниц >>> ', allPagesHH)
-    allPages()
-  }
-  
-  function allPages() {
-      for (let i = 0; i < allPagesHH; i++) {
-          fetch(`https://api.hh.ru/vacancies?text=${name}&area=1146&per_page=100&page=0&schedule=flyInFlyOut'&page=${i}`)
-              .then(res=> res.json())
-              .then(data => (setAllDataHH(...allDataHH, data.items)))
-          setTimeout(5000);
-      }
-  }
-
-  function clogtwo() {
-    console.log('всего данных для таблицы >>> ', dataTable)
-  }
+	const [profRoleHH, setProfRoleHH] = useState([]);  //все названия вакансий по группам
+	const [allProfRoleHH, setAllProfRoleHH] = useState([]);  //все названия вакансий без группировки
+	const [reqInput, setReqInput] = useState(''); //значение поля поиска req
+	const [reqSchedule, setReqSchedule] = useState(); //значение поля график
+	const [reqArea, setReqArea] = useState(); //значение поля регион
+	const [reqInputValue, setReqInputValue] = useState(''); //текущее значение поля поиска req
 
 
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <div>
-          {/* {d.map((elem) => {
-            return(
-              <p>{elem}</p>
-            )
-          })} */}
-        </div>
-        <a
-          className="App-link"
-          href="#"
-          rel="noopener noreferrer"
-          onClick={clog}
-        >
-          количество и запуск
-        </a>
-        <a
-          className="App-link"
-          href="#"
-          rel="noopener noreferrer"
-          onClick={clogtwo}
-        >
-          результат
-        </a>
-      </header>
+	// const id_role = 52;
+	// useEffect(() => {
+	// 	// fetch(`https://api.hh.ru/vacancies?clusters=true&text=${name}&area=1146&per_page=100&page=0&schedule=flyInFlyOut`) //5 id:81235130
+	// 	fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_role}&area=1146&per_page=100&page=0&schedule=flyInFlyOut`) //5 id:81235130
+	// 		.then(res=> res.json())
+	// 		.then(data => (setDataHH(data), setAllPagesHH(data.pages), setDataTable(data.items)))
+	// }, [])
+	console.log(dataHH);
+
+	useEffect(() => {
+		fetch(`https://api.hh.ru/professional_roles`)
+			.then(res=> res.json())
+			.then(data => setProfRoleHH(data.categories));
+	}, [])
+	// console.log(profRoleHH);
+
+		const schedule_db = [{id:"fullDay",name:"Полный день"},{id:"shift",name:"Сменный график"},{id:"flexible",name:"Гибкий график"},{id:"remote",name:"Удаленная работа"},{id:"flyInFlyOut",name:"Вахтовый метод"}];
+		const areas_db = [{id:"113",name:"Не выбран"},{id:"54",name:"Красноярск"},{id:"1146",name:"Красноярский край"},{id:"1187",name:"Республика Хакасия"}];
+
+		useEffect(() => {
+			function d() {
+						const allProfRoleHH = [];
+						profRoleHH.forEach(elem => {
+								allProfRoleHH.push(elem.roles)
+						})
+						const aH = [];
+						for (let i = 0; i < allProfRoleHH.length; i++) {
+							allProfRoleHH[i].forEach(e => {
+								aH.push(e)
+							})
+						}
+						setAllProfRoleHH(aH)
+					}d()
+		}, [profRoleHH])
+				
+		console.log("сейчас newAllProfRoleHH >>> ", allProfRoleHH)
+
+		//запрос на получение данных с hh
+		function reqData() {
+				console.log("сейчас reqSchedule", reqSchedule)
+				console.log("сейчас reqInput", reqInput)
+				console.log("сейчас reqArea", reqArea)
+
+				const allProfRoleHH = [];
+				profRoleHH.forEach(elem => {
+						allProfRoleHH.push(elem.roles)
+				})
+
+				let newAllProfRoleHH = [];
+				for (let i = 0; i < allProfRoleHH.length; i++) {
+					// newAllProfRoleHH.push(allProfRoleHH[i]);
+					
+					allProfRoleHH[i].forEach(e => {
+						newAllProfRoleHH.push(e)
+					})
+				}
+
+				let id_area = 113;
+				if(reqArea === undefined) {
+						return id_area = 113;
+				} else {
+						areas_db.forEach(elem => {
+								if(elem.name === reqArea) {
+										return id_area = elem.id;
+								}
+						})
+				}
+
+				let id_rol = 1;
+				newAllProfRoleHH.forEach(elem => {
+					if(elem.name.toLowerCase() == reqInput.toLowerCase()){
+						return id_rol = elem.id
+					}
+				})
+				schedule_db.forEach(elem => {
+						if(elem.name === reqSchedule) {
+								fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_rol}&area=${id_area}&per_page=100&page=0&schedule=${elem.id}`)
+										.then(res=> res.json())
+										.then(data => (setDataHH(data), setAllPagesHH(data.pages), setDataTable(data.items)))
+						}
+						if(reqSchedule === undefined || reqSchedule === "График не задан") {
+								fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_rol}&area=1146&per_page=100&page=0`)
+										.then(res=> res.json())
+										.then(data => (setDataHH(data), setAllPagesHH(data.pages), setDataTable(data.items)))
+						}
+				})
+
+				console.log("сейчас newAllProfRoleHH", newAllProfRoleHH);	
+		}
+
+
+	
+
+	function clog() {
+		allPages()
+		console.log('всего вакансий >>> ', allDataHH)
+	}
+	
+	function allPages() {
+		let allP = 4;
+
+		function per(n) {
+				fetch(`https://api.hh.ru/vacancies?professional_role=31&area=1146&per_page=100&page=${n}`)
+						.then(res=> res.json())
+						.then(data => (setAllDataHH(...allDataHH, data.items)))
+		}
+
+			for (let i = 0; i < allP; i++) {
+					per(i)
+			}
+			console.log('allDataHH >>> ', allDataHH)
+	}
+
+
+		
+		//вывод подсказок при вводе в поле поиска:
+		const filteredRole = allProfRoleHH.filter(elem => {
+			return elem.name.toLowerCase().includes(reqInputValue.toLowerCase())
+		})
+
+		// поиск по таблице:
+		function tableSearch() {
+				var phrase = document.querySelector('.search-form__input');
+				var table = document.querySelector('#table');
+				var regPhrase = new RegExp(phrase.value, 'i');
+				var flag = false;
+				for (var i = 1; i < table.rows.length; i++) {
+						flag = false;
+						for (var j = table.rows[i].cells.length - 1; j >= 0; j--) {
+								flag = regPhrase.test(table.rows[i].cells[j].innerHTML);
+								if (flag) break;
+						}
+						if (flag) {
+								table.rows[i].style.display = "";
+						} else {
+								table.rows[i].style.display = "none";
+						}
+		
+				}
+		}
+
+			// сортировка таблицы по столбцам:
+			function sortColumn(id) {
+				const table = document.querySelector('#table')
+				if(sortedField === "there") {
+						setSortedField("here");
+						let sortedRows = Array.from(table.rows)
+						.slice(1)
+						.sort((rowA, rowB) => rowA.cells[id].innerHTML > rowB.cells[id].innerHTML ? 1 : -1);
+						table.tBodies[0].append(...sortedRows);
+				} else {
+						setSortedField("there");
+						let sortedRows = Array.from(table.rows)
+						.slice(1)
+						.sort((rowB, rowA) => rowB.cells[id].innerHTML > rowA.cells[id].innerHTML ? -1 : 1);
+						table.tBodies[0].append(...sortedRows);
+				}
+		}
+
+	return (
+			<div className="App">
+					<header className="App-header">
+						<a className="App-link" href="#" rel="noopener noreferrer" onClick={clog}> количество и запуск</a>
+					</header>
 
 
 
-          <main>
-          <div className="table-box">
-                        <table className="table" id="table">
-                            <thead>
-                                <tr className="table-head">
-                                    <th id="0" className="table-head__elem">address</th>
-                                    <th id="1" className="table-head__elem">alternate_url</th>
-                                    <th id="2" className="table-head__elem">area</th>
-                                    <th id="3" className="table-head__elem">created_at</th>
-                                    <th id="4" className="table-head__elem">employer</th>
-                                    <th id="5" className="table-head__elem">employment</th>
-                                    <th id="6" className="table-head__elem">experience</th>
-                                    <th id="7" className="table-head__elem">id</th>
-                                    <th id="8" className="table-head__elem">name</th>
-                                    <th id="9" className="table-head__elem">published_at</th>
-                                    <th id="10" className="table-head__elem">salary</th>
-                                    <th id="11" className="table-head__elem">snippet</th>
-                                    <th id="12" className="table-head__elem">type</th>
-                                </tr>
-                            </thead>
+					<main>
 
-                            <tbody>
-                              {/* {dataTable.map((elem, index) => {
-                                return (
-                                    <tr className="table-body" key={index}>
-                                        <td className="table-body__elem">{elem.address}</td>
-                                        <td className="table-body__elem">{elem}</td>
-                                        <td className="table-body__elem">{elem}</td>
-                                        <td className="table-body__elem">{elem}</td>
-                                        <td className="table-body__elem">{elem}</td>
-                                        <td className="table-body__elem">{elem}</td>
-                                        <td className="table-body__elem">{elem}</td>
-                                        <td className="table-body__elem">{elem}</td>
-                                        <td className="table-body__elem">{elem}</td>
-                                        <td className="table-body__elem">{elem}</td>
-                                        <td className="table-body__elem">{elem}</td>
-                                        <td className="table-body__elem">{elem}</td>
-                                    </tr>
-                                )
-                              })} */}
-                            </tbody>
-                        </table>
-                    </div>
-          </main>
+							<div className="request-box">
+									<form className="request-form">
+											<input className="request-form__input" type="text" placeholder="вакансия" onKeyUp={(e) => setReqInput(e.target.value)} onChange={(e) => setReqInputValue(e.target.value)}/>
+											
+											<div className="list-box">
+													<select>
+															{filteredRole.map((elem, index) => {
+																	return (
+																			<option key={index}>{elem.name}</option>
+																	)
+															})}
+													</select>
+											</div>
+											
+											<select onChange={(e) => setReqSchedule(e.target.value)}>
+													<option>График не задан</option>
+													{schedule_db.map((elem, index) => {
+															return (
+																	<option id={elem.id} key={index}>{elem.name}</option>
+															)
+													})}
+											</select>
+
+											<select onChange={(e) => setReqArea(e.target.value)}>
+													{areas_db.map((elem, index) => {
+															return (
+																	<option id={elem.id} key={index}>{elem.name}</option>
+															)
+													})}
+											</select>
+
+											<button className="request-form__btn" type="button" onClick={reqData}>Запрос</button>
+									</form>
+							</div>
+
+							<div className="search-box">
+									<form className="search-form">
+											<input className="search-form__input" type="text" placeholder="Поиск..." onKeyUp={tableSearch}/>
+											{/* <button className="search-form__btn" type="button"><img className="search-form__btn_img" src={searchImg} alt="поиск"></img></button> */}
+									</form>
+							</div>
+
+							<div className="table-box">
+									<table className="table" id="table">
+											<thead>
+													<tr className="table-head">
+															<th id="0" className="table-head__elem">№</th>
+															<th id="1" className="table-head__elem">name</th>
+															<th id="2" className="table-head__elem">salary</th>
+															<th id="3" className="table-head__elem" onClick={(e) => sortColumn(e.currentTarget.id)}>area</th>
+															<th id="4" className="table-head__elem">employer</th>
+															<th id="5" className="table-head__elem" onClick={(e) => sortColumn(e.currentTarget.id)}>address</th>
+															<th id="6" className="table-head__elem">employment</th>
+															<th id="7" className="table-head__elem" onClick={(e) => sortColumn(e.currentTarget.id)}>experience</th>
+															<th id="8" className="table-head__elem">published_at</th>
+													</tr>
+											</thead>
+
+											<tbody>
+													{dataTable.map((elem, index) => {
+															return (
+																	<tr className="table-body" key={index}>
+																			<td className="table-body__elem">{index+1}</td>
+																			<td className="table-body__elem"><a href={elem.alternate_url} target="_blank">{elem.name}</a></td>
+																			<td className="table-body__elem">{elem.salary === null ? "не указано" : (elem.salary.from === elem.salary.to ? elem.salary.from : (elem.salary.from !== null & elem.salary.to !== null ? elem.salary.from + " - " + elem.salary.to : (elem.salary.from === null ? elem.salary.to : elem.salary.from)))} {elem.salary !== null ? elem.salary.currency : null}</td>
+																			<td className="table-body__elem">{elem.area.name}</td>
+																			<td className="table-body__elem"><a href={elem.employer.alternate_url} target="_blank">{elem.employer.name}</a></td>
+																			<td className="table-body__elem">{elem.address === null ? "не указан" : elem.address.city}</td>
+																			<td className="table-body__elem">{elem.employment.name}</td>
+																			<td className="table-body__elem">{elem.experience.name}</td>
+																			<td className="table-body__elem">{elem.published_at.split('T')[0].replace(/^(\d+)-(\d+)-(\d+)$/, `$3.$2.$1`)}</td>
+																	</tr>
+															)
+													})}
+											</tbody>
+									</table>
+							</div>
+					</main>
 
 
 
-    </div>
-  );
+			</div>
+	);
 }
 
 export default App;
