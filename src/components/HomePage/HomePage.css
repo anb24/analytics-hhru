@@ -1,0 +1,140 @@
+
+
+
+.home-page {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.home-page_center {
+  justify-content: center;
+}
+
+.header__title {
+  margin: 0;
+  cursor: default;
+}
+
+.main {
+  /* display: flex; */
+  justify-content: center;
+}
+
+.request-box {
+  position: relative;
+  margin: auto;
+  width: 500px;
+}
+
+.request-form__input {
+  width: 250px;
+  height: 25px;
+  padding-left: 10px;
+  font-size: 20px;
+  margin: 30px 0 15px;
+  border-radius: 5px;
+  border: 1px solid rgb(99, 99, 99);
+}
+
+.autocomplete {
+  position: absolute;
+  left: 0;
+  top: 70px;
+  width: 100%;
+  background: white;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  box-shadow: 1px 1px 5px rgba(0, 0, 0, .15);
+  z-index: 11;
+  max-height: 222px;
+  height: auto;
+  overflow: auto;
+}
+
+.autocomplete__item {
+  padding: 5px;
+}
+
+.autocomplete__item:hover {
+  background: #aadeee;
+  cursor: pointer;
+  transition: cubic-bezier(1, 0, 0, 1) .3s all;
+}
+
+.request-container {
+  margin-bottom: 15px;
+}
+
+.request-form__select {
+  height: 30px;
+  font-size: 15px;
+  padding-left: 10px;
+  width: 215px;
+  cursor: pointer;
+  border-radius: 5px;
+  border: 1px solid rgb(99, 99, 99);
+}
+
+.request-form__select:first-child {
+  margin-right: 15px;
+}
+
+.request-form__btn {
+  cursor: pointer;
+  font-size: 20px;
+  padding: 5px 15px;
+  border: none;
+  background-color: #aadeee;
+  color: #282c34;
+  border-radius: 5px;
+  margin-bottom: 30px;
+}
+
+.request-form__btn:hover {
+  transition: 1s;
+  background-color: #282c34;
+  color: #aadeee;
+}
+
+/*   ***********     ТАБЛИЦА     ***********   */
+.table {
+  margin: auto;
+  width: 99vw;
+  border-collapse: collapse;
+  border-top: 2px solid rgb(255, 255, 255);
+}
+
+.search-box {
+  background-color: #aadeee;
+  padding: 15px 0 10px;
+}
+
+.search-form__input {
+  width: 200px;
+  height: 20px;
+  padding-left: 5px;
+  font-size: 15px;
+  border-radius: 5px;
+  border: 1px solid rgb(99, 99, 99);
+}
+
+.table-head {
+  background-color: #aadeee;
+  position: sticky;
+  top: 0px;
+}
+
+.table-body__elem {
+  padding: 2px 0;
+}
+
+.table-body:nth-child(2n) {
+	background-color: rgb(243, 243, 243);
+}
+
+.table-body:hover {
+  background-color: #aadeee;
+}

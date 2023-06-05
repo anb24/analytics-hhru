@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import './App.css';
+// import './Test.css';
 
 function App() {
 
@@ -17,6 +17,7 @@ function App() {
 	const [reqArea, setReqArea] = useState(); //значение поля регион
 	const [reqInputValue, setReqInputValue] = useState(''); //текущее значение поля поиска req
 
+	const [isOpen, setIsOpen] = useState(true);
 
 	// const id_role = 52;
 	// useEffect(() => {
@@ -27,39 +28,41 @@ function App() {
 	// }, [])
 	console.log(dataHH);
 
-	useEffect(() => {
-		fetch(`https://api.hh.ru/professional_roles`)
-			.then(res=> res.json())
-			.then(data => setProfRoleHH(data.categories));
-	}, [])
-	// console.log(profRoleHH);
+//получаем все названия вакансий по группам
+		useEffect(() => {
+				fetch(`https://api.hh.ru/professional_roles`)
+						.then(res=> res.json())
+						.then(data => setProfRoleHH(data.categories));
+		}, [])
 
 		const schedule_db = [{id:"fullDay",name:"Полный день"},{id:"shift",name:"Сменный график"},{id:"flexible",name:"Гибкий график"},{id:"remote",name:"Удаленная работа"},{id:"flyInFlyOut",name:"Вахтовый метод"}];
 		const areas_db = [{id:"113",name:"Не выбран"},{id:"54",name:"Красноярск"},{id:"1146",name:"Красноярский край"},{id:"1187",name:"Республика Хакасия"}];
+		let current_db = [];
 
+//получаем все названия вакансий без группировки:
 		useEffect(() => {
-			function d() {
+				function gettingAll() {
 						const allProfRoleHH = [];
 						profRoleHH.forEach(elem => {
 								allProfRoleHH.push(elem.roles)
 						})
-						const aH = [];
+						const allRole = [];
 						for (let i = 0; i < allProfRoleHH.length; i++) {
-							allProfRoleHH[i].forEach(e => {
-								aH.push(e)
-							})
+								allProfRoleHH[i].forEach(e => {
+									allRole.push(e)
+								})
 						}
-						setAllProfRoleHH(aH)
-					}d()
+						setAllProfRoleHH(allRole)
+				}gettingAll()
 		}, [profRoleHH])
 				
-		console.log("сейчас newAllProfRoleHH >>> ", allProfRoleHH)
+		// console.log("сейчас newAllProfRoleHH >>> ", allProfRoleHH)
 
 		//запрос на получение данных с hh
 		function reqData() {
-				console.log("сейчас reqSchedule", reqSchedule)
-				console.log("сейчас reqInput", reqInput)
-				console.log("сейчас reqArea", reqArea)
+				// console.log("сейчас reqSchedule", reqSchedule)
+				// console.log("сейчас reqInput", reqInput)
+				// console.log("сейчас reqArea", reqArea)
 
 				const allProfRoleHH = [];
 				profRoleHH.forEach(elem => {
@@ -95,40 +98,54 @@ function App() {
 				schedule_db.forEach(elem => {
 						if(elem.name === reqSchedule) {
 								fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_rol}&area=${id_area}&per_page=100&page=0&schedule=${elem.id}`)
-										.then(res=> res.json())
+										.then(res => res.json())
 										.then(data => (setDataHH(data), setAllPagesHH(data.pages), setDataTable(data.items)))
 						}
 						if(reqSchedule === undefined || reqSchedule === "График не задан") {
 								fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_rol}&area=1146&per_page=100&page=0`)
-										.then(res=> res.json())
+										.then(res => res.json())
 										.then(data => (setDataHH(data), setAllPagesHH(data.pages), setDataTable(data.items)))
 						}
 				})
 
-				console.log("сейчас newAllProfRoleHH", newAllProfRoleHH);	
+				// console.log("сейчас newAllProfRoleHH", newAllProfRoleHH);	
 		}
 
 
 	
-
+		const tt = [];
 	function clog() {
 		allPages()
+		console.log('всего в current_db >>> ', current_db)
+		setAllDataHH(current_db);
 		console.log('всего вакансий >>> ', allDataHH)
+		
+		console.log('ttttttt >>> ', tt)
+		return tt
 	}
 	
 	function allPages() {
 		let allP = 4;
 
+		
 		function per(n) {
-				fetch(`https://api.hh.ru/vacancies?professional_role=31&area=1146&per_page=100&page=${n}`)
-						.then(res=> res.json())
-						.then(data => (setAllDataHH(...allDataHH, data.items)))
-		}
-
 			for (let i = 0; i < allP; i++) {
-					per(i)
+				fetch(`https://api.hh.ru/vacancies?professional_role=31&area=1146&per_page=100&page=${i}`)
+						.then(res=> res.json())
+						.then(data => current_db.push(data.items))
+					}
+		}per()
+
+		setTimeout(() => {
+			for (let i = 0; i < current_db.length; i++) {
+				current_db[i].forEach(e => {
+					tt.push(e)
+					
+				})
+				
 			}
-			console.log('allDataHH >>> ', allDataHH)
+		}, 1000);
+		
 	}
 
 
@@ -177,6 +194,55 @@ function App() {
 				}
 		}
 
+
+
+		// useEffect(() => {
+		// 		const searchInput = document.querySelector('.request-form__input');
+		// 		const searchOptions = document.querySelector('.options');
+
+		// 		function getOptions(word, stations) {
+		// 			return allProfRoleHH.filter(s => {
+		// 				// Определить совпадает ли то что мы вбили в input
+		// 				// названиям станций внутри массива
+				
+		// 				const regex = new RegExp(word, 'gi');
+		// 				return s.name.match(regex);
+		// 			})
+		// 		}
+				
+		// 		function displayOptions() {
+				
+		// 			console.log('this.value >> ', this.value);
+				
+		// 			const options = getOptions(this.value, allProfRoleHH);
+				
+		// 			const html = options
+		// 				.map(station => {
+		// 					const regex = new RegExp(this.value, 'gi');
+		// 					const stationName = station.name.replace(regex, 
+		// 							`<span className="hl">${this.value}</span>`
+		// 						)
+				
+		// 					return `<li><span>${stationName}</span></li>`;
+		// 				})
+		// 				.slice(0, 10)
+		// 				.join('');
+				
+		// 			// searchOptions.innerHTML = this.value ? html : null;
+		// 		}
+		// 		searchInput.addEventListener('change', displayOptions);
+		// 		searchInput.addEventListener('keyup', displayOptions);
+		// })
+
+		const itemClickHandler = (e) => {
+				setReqInputValue(e.target.textContent)
+				setIsOpen(!isOpen);
+		}
+
+		const inputClickHandler = () => {
+			setIsOpen(true);
+		}
+
 	return (
 			<div className="App">
 					<header className="App-header">
@@ -189,8 +255,20 @@ function App() {
 
 							<div className="request-box">
 									<form className="request-form">
-											<input className="request-form__input" type="text" placeholder="вакансия" onKeyUp={(e) => setReqInput(e.target.value)} onChange={(e) => setReqInputValue(e.target.value)}/>
+											<input className="request-form__input" value={reqInputValue} type="text" placeholder="вакансия" onKeyUp={(e) => setReqInput(e.target.value)} onChange={(e) => setReqInputValue(e.target.value)} onClick={inputClickHandler}/>
 											
+											{/* <ul className="options">
+        											<li>названия</li>
+      										</ul> */}
+
+											<ul className="autocomplete">
+												{reqInputValue && isOpen ? filteredRole.map((role, index) => {
+													return (
+														<li className="autocomplete__item" key={index} onClick={itemClickHandler}>{role.name}</li>
+													)
+												}) : null}
+											</ul>
+
 											<div className="list-box">
 													<select>
 															{filteredRole.map((elem, index) => {
@@ -245,7 +323,7 @@ function App() {
 													</tr>
 											</thead>
 
-											<tbody>
+											<tbody> 
 													{dataTable.map((elem, index) => {
 															return (
 																	<tr className="table-body" key={index}>
@@ -259,7 +337,7 @@ function App() {
 																			<td className="table-body__elem">{elem.experience.name}</td>
 																			<td className="table-body__elem">{elem.published_at.split('T')[0].replace(/^(\d+)-(\d+)-(\d+)$/, `$3.$2.$1`)}</td>
 																	</tr>
-															)
+															)		
 													})}
 											</tbody>
 									</table>
