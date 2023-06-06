@@ -13,7 +13,7 @@ function Test() {
 	const [reqInputValue, setReqInputValue] = useState(''); //текущее значение поля поиска req
 	const [isOpen, setIsOpen] = useState(true); //открытие-ззакрытие поля подсказок в поиске
 	const [dataHH, setDataHH] = useState([]); //весь ответ
-	const [allPagesHH, setAllPagesHH] = useState(); //всего страниц
+	const [allPagesHH, setAllPagesHH] = useState(1); //всего страниц
 	const [currentPage, setCurrentPage] = useState(1); //текущая страница
 	const [fetching, setFetching] = useState(false); //флаг для загрузки данных
 	const [dataTable, setDataTable] = useState([]); //только вакансии из ответа
@@ -25,10 +25,11 @@ function Test() {
     const schedule_db = [{id:"fullDay",name:"Полный день"},{id:"shift",name:"Сменный график"},{id:"flexible",name:"Гибкий график"},{id:"remote",name:"Удаленная работа"},{id:"flyInFlyOut",name:"Вахтовый метод"}];
     const areas_db = [{id:"113",name:"Регион не задан"},{id:"1",name:"Москва"},{id:"54",name:"Красноярск"},{id:"1146",name:"Красноярский край"},{id:"1124",name:"Иркутская область"},{id:"1169",name:"Республика Тыва"},{id:"1187",name:"Республика Хакасия"},{id:"1229",name:"Кемеровская область"},{id:"1255",name:"Томская область"},{id:"1216",name:"Республика Алтай"},{id:"1217",name:"Алтайский край"},{id:"1202",name:"Новосибирская область"},{id:"1249",name:"Омская область"}];
 
-	const [idRole, setIdRole] = useState();
-	const [idArea, setIdArea] = useState();
+	const [idRole, setIdRole] = useState(1);
+	const [idArea, setIdArea] = useState(113);
 
 	console.log(dataHH);
+	console.log(allPagesHH);
 
 	useEffect(() => {
 		if(fetching) {
@@ -97,12 +98,13 @@ function Test() {
 
 	const scrollHandler = (e) => {
 		// if(e.target.documentElement.scrollHeight - (e.target.documentElement.scrollTop + window.innerHeight) < 100 && currentPage <= allPagesHH) {
-		if(e.target.documentElement.scrollHeight - (e.target.documentElement.scrollTop + window.innerHeight) < 100 && currentPage <= allPagesHH) {
+		if(e.target.documentElement.scrollHeight - (e.target.documentElement.scrollTop + window.innerHeight) < 100 & currentPage <= allPagesHH) {
 			setFetching(true)
 			console.log("ia true")
 			// reqData()
 		}
 	}
+	
 
 	function pageUpHandlerTest() {
 		console.log(currentPage);
@@ -176,7 +178,7 @@ function Test() {
 
         let id_area = "113";
         if(reqArea === "undefined") {
-            return id_area = 113;
+            return (id_area = 113, setIdArea(113));
         } else {
             areas_db.forEach(elem => {
                 if(elem.name === reqArea) {
@@ -186,8 +188,9 @@ function Test() {
         }
 
         let id_rol = 1;
+		setIdRole(1);
         allProfRoleHH.forEach(elem => {
-            if(elem.name.toLowerCase() == reqInput.toLowerCase()){
+            if(elem.name.toLowerCase() === reqInput.toLowerCase()){
                 return (id_rol = elem.id, setIdRole(elem.id))
             }
         })
@@ -195,12 +198,20 @@ function Test() {
             if(elem.name === reqSchedule) {
                 fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_rol}&area=${id_area}&per_page=100&page=0&schedule=${elem.id}`)
                     .then(res => res.json())
-                    .then(data => (setDataHH(data), setAllPagesHH(data.pages), setDataTable(data.items)))
+                    .then(data => {
+						setDataHH(data)
+						setAllPagesHH(data.pages)
+						setDataTable(data.items)
+					})
             }
             if(reqSchedule === undefined || reqSchedule === "График не задан") {
                 fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_rol}&area=${id_area}&per_page=100&page=0`)
                     .then(res => res.json())
-                    .then(data => (setDataHH(data), setAllPagesHH(data.pages), setDataTable(data.items)))
+                    .then(data => {
+						setDataHH(data)
+						setAllPagesHH(data.pages)
+						setDataTable(data.items)
+					})
             }
         })
 	// }
