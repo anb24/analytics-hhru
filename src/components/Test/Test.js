@@ -1,353 +1,397 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
-// import './Test.css';
+import "./Test.css";
 
-function App() {
+function Test() {
 
-	const [dataHH, setDataHH] = useState([]); //весь ответ
-	const [dataTable, setDataTable] = useState([]); //только вакансии из ответа
-	const [allPagesHH, setAllPagesHH] = useState(); //всего страниц
-	const [allDataHH, setAllDataHH] = useState([]);
-	const [sortedField, setSortedField] = useState("there"); //флаг для сортировки (направление)
+	const [photos, setPhotos] = useState([]); //тестовая для загрузки ваканчий постранично
+	const [totalCount, setTotalCount] = useState(0);
 
-	const [profRoleHH, setProfRoleHH] = useState([]);  //все названия вакансий по группам
+    const [profRoleHH, setProfRoleHH] = useState([]);  //все названия вакансий по группам
 	const [allProfRoleHH, setAllProfRoleHH] = useState([]);  //все названия вакансий без группировки
+	const [reqInputValue, setReqInputValue] = useState(''); //текущее значение поля поиска req
+	const [isOpen, setIsOpen] = useState(true); //открытие-ззакрытие поля подсказок в поиске
+	const [dataHH, setDataHH] = useState([]); //весь ответ
+	const [allPagesHH, setAllPagesHH] = useState(); //всего страниц
+	const [currentPage, setCurrentPage] = useState(1); //текущая страница
+	const [fetching, setFetching] = useState(false); //флаг для загрузки данных
+	const [dataTable, setDataTable] = useState([]); //только вакансии из ответа
+	const [reqArea, setReqArea] = useState(); //значение поля регион
 	const [reqInput, setReqInput] = useState(''); //значение поля поиска req
 	const [reqSchedule, setReqSchedule] = useState(); //значение поля график
-	const [reqArea, setReqArea] = useState(); //значение поля регион
-	const [reqInputValue, setReqInputValue] = useState(''); //текущее значение поля поиска req
+	const [sortedField, setSortedField] = useState("there"); //флаг для сортировки (направление)
 
-	const [isOpen, setIsOpen] = useState(true);
+    const schedule_db = [{id:"fullDay",name:"Полный день"},{id:"shift",name:"Сменный график"},{id:"flexible",name:"Гибкий график"},{id:"remote",name:"Удаленная работа"},{id:"flyInFlyOut",name:"Вахтовый метод"}];
+    const areas_db = [{id:"113",name:"Регион не задан"},{id:"1",name:"Москва"},{id:"54",name:"Красноярск"},{id:"1146",name:"Красноярский край"},{id:"1124",name:"Иркутская область"},{id:"1169",name:"Республика Тыва"},{id:"1187",name:"Республика Хакасия"},{id:"1229",name:"Кемеровская область"},{id:"1255",name:"Томская область"},{id:"1216",name:"Республика Алтай"},{id:"1217",name:"Алтайский край"},{id:"1202",name:"Новосибирская область"},{id:"1249",name:"Омская область"}];
 
-	// const id_role = 52;
-	// useEffect(() => {
-	// 	// fetch(`https://api.hh.ru/vacancies?clusters=true&text=${name}&area=1146&per_page=100&page=0&schedule=flyInFlyOut`) //5 id:81235130
-	// 	fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_role}&area=1146&per_page=100&page=0&schedule=flyInFlyOut`) //5 id:81235130
-	// 		.then(res=> res.json())
-	// 		.then(data => (setDataHH(data), setAllPagesHH(data.pages), setDataTable(data.items)))
-	// }, [])
+	const [idRole, setIdRole] = useState();
+	const [idArea, setIdArea] = useState();
+
 	console.log(dataHH);
 
-//получаем все названия вакансий по группам
-		useEffect(() => {
-				fetch(`https://api.hh.ru/professional_roles`)
-						.then(res=> res.json())
-						.then(data => setProfRoleHH(data.categories));
-		}, [])
+	useEffect(() => {
+		if(fetching) {
+			console.log(fetching);
+			schedule_db.forEach(elem => {
+				if(elem.name === reqSchedule) {
+					axios.get(`https://api.hh.ru/vacancies?clusters=true&professional_role=${idRole}&area=${idArea}&per_page=100&page=${currentPage}&schedule=${elem.id}`)
+						.then(response => {
+							setDataTable([...dataTable, ...response.data.items])
+							setCurrentPage(prevState => prevState + 1)
+							setTotalCount(response.data.pages)
+							console.log("c schedule > ", response)
+							console.log(currentPage + " < " + allPagesHH)
+						})
+						.finally(() => setFetching(false))
+					}
+				if(reqSchedule === undefined || reqSchedule === "График не задан") {
+					axios.get(`https://api.hh.ru/vacancies?clusters=true&professional_role=${idRole}&area=${idArea}&per_page=100&page=${currentPage}`)
+						.then(response => {
+							setDataTable([...dataTable, ...response.data.items])
+							setCurrentPage(prevState => prevState + 1)
+							setTotalCount(response.data.pages)
+							console.log("без schedule > ", response)
+							console.log(currentPage + " < " + allPagesHH)
+						})
+						.finally(() => setFetching(false))
+					}
+			})
 
-		const schedule_db = [{id:"fullDay",name:"Полный день"},{id:"shift",name:"Сменный график"},{id:"flexible",name:"Гибкий график"},{id:"remote",name:"Удаленная работа"},{id:"flyInFlyOut",name:"Вахтовый метод"}];
-		const areas_db = [{id:"113",name:"Не выбран"},{id:"54",name:"Красноярск"},{id:"1146",name:"Красноярский край"},{id:"1187",name:"Республика Хакасия"}];
-		let current_db = [];
+
+			// axios.get(`https://api.hh.ru/vacancies?clusters=true&text=сетевой администратор&area=113&per_page=100&page=${currentPage}`)
+			// 	// .then(res => res.json())
+			// 	.then(response => {
+			// 		setDataTable([...dataTable, ...response.data.items])
+			// 		setCurrentPage(prevState => prevState + 1)
+			// 		setTotalCount(response.data.pages)
+			// 		console.log(response)
+			// })
+			// .finally(() => setFetching(false))
+		}
+	}, [fetching])
+
+
+	
+	// useEffect(() => {
+	// 	if(fetching) {
+	// 		console.log(fetching);
+	// 		axios.get(`https://api.hh.ru/vacancies?clusters=true&text=сетевой администратор&area=113&per_page=100&page=${currentPage}`)
+	// 			// .then(res => res.json())
+	// 			.then(response => {
+	// 				setPhotos([...photos, ...response.data.items])
+	// 				setCurrentPage(prevState => prevState + 1)
+	// 				setTotalCount(response.data.pages)
+	// 				console.log(response)
+	// 		})
+	// 		.finally(() => setFetching(false))
+	// 	}
+	// }, [fetching])
+
+	useEffect(() => {
+		document.addEventListener('scroll', scrollHandler)
+		return function() {
+			document.removeEventListener('scroll', scrollHandler);
+		}
+	}, [])
+
+	const scrollHandler = (e) => {
+		// if(e.target.documentElement.scrollHeight - (e.target.documentElement.scrollTop + window.innerHeight) < 100 && currentPage <= allPagesHH) {
+		if(e.target.documentElement.scrollHeight - (e.target.documentElement.scrollTop + window.innerHeight) < 100 && currentPage <= allPagesHH) {
+			setFetching(true)
+			console.log("ia true")
+			// reqData()
+		}
+	}
+
+	function pageUpHandlerTest() {
+		console.log(currentPage);
+		// console.log(photos);
+		// setFetching(true)
+		// axios.get(`https://api.hh.ru/vacancies?clusters=true&text=водитель&area=113&per_page=100&page=${currentPage}`)
+		// 	.then(response => {setPhotos(...photos, ...response.data.items)}, setCurrentPage(e => e+1))
+				
+	}
+
+
+
+//получаем все названия вакансий по группам
+	useEffect(() => {
+        fetch(`https://api.hh.ru/professional_roles`)
+            .then(res=> res.json())
+            .then(data => setProfRoleHH(data.categories));
+    }, [])
 
 //получаем все названия вакансий без группировки:
-		useEffect(() => {
-				function gettingAll() {
-						const allProfRoleHH = [];
-						profRoleHH.forEach(elem => {
-								allProfRoleHH.push(elem.roles)
-						})
-						const allRole = [];
-						for (let i = 0; i < allProfRoleHH.length; i++) {
-								allProfRoleHH[i].forEach(e => {
-									allRole.push(e)
-								})
-						}
-						setAllProfRoleHH(allRole)
-				}gettingAll()
-		}, [profRoleHH])
-				
-		// console.log("сейчас newAllProfRoleHH >>> ", allProfRoleHH)
+	useEffect(() => {
+        function gettingAll() {
+            const allProfRoleHH = [];
+            profRoleHH.forEach(elem => {
+                allProfRoleHH.push(elem.roles)
+            })
+            const allRole = [];
+            for (let i = 0; i < allProfRoleHH.length; i++) {
+                allProfRoleHH[i].forEach(e => {
+                    allRole.push(e)
+                })
+            }
+            setAllProfRoleHH(allRole)
+        }gettingAll()
+    }, [profRoleHH])
 
-		//запрос на получение данных с hh
-		function reqData() {
-				// console.log("сейчас reqSchedule", reqSchedule)
-				// console.log("сейчас reqInput", reqInput)
-				// console.log("сейчас reqArea", reqArea)
+//вывод подсказок при вводе в поле поиска:
+	const filteredRole = allProfRoleHH.filter(elem => {
+		return elem.name.toLowerCase().includes(reqInputValue.toLowerCase())
+	})
 
-				const allProfRoleHH = [];
-				profRoleHH.forEach(elem => {
-						allProfRoleHH.push(elem.roles)
-				})
-
-				let newAllProfRoleHH = [];
-				for (let i = 0; i < allProfRoleHH.length; i++) {
-					// newAllProfRoleHH.push(allProfRoleHH[i]);
-					
-					allProfRoleHH[i].forEach(e => {
-						newAllProfRoleHH.push(e)
-					})
-				}
-
-				let id_area = 113;
-				if(reqArea === undefined) {
-						return id_area = 113;
-				} else {
-						areas_db.forEach(elem => {
-								if(elem.name === reqArea) {
-										return id_area = elem.id;
-								}
-						})
-				}
-
-				let id_rol = 1;
-				newAllProfRoleHH.forEach(elem => {
-					if(elem.name.toLowerCase() == reqInput.toLowerCase()){
-						return id_rol = elem.id
-					}
-				})
-				schedule_db.forEach(elem => {
-						if(elem.name === reqSchedule) {
-								fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_rol}&area=${id_area}&per_page=100&page=0&schedule=${elem.id}`)
-										.then(res => res.json())
-										.then(data => (setDataHH(data), setAllPagesHH(data.pages), setDataTable(data.items)))
-						}
-						if(reqSchedule === undefined || reqSchedule === "График не задан") {
-								fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_rol}&area=1146&per_page=100&page=0`)
-										.then(res => res.json())
-										.then(data => (setDataHH(data), setAllPagesHH(data.pages), setDataTable(data.items)))
-						}
-				})
-
-				// console.log("сейчас newAllProfRoleHH", newAllProfRoleHH);	
-		}
-
-
-	
-		const tt = [];
-	function clog() {
-		allPages()
-		console.log('всего в current_db >>> ', current_db)
-		setAllDataHH(current_db);
-		console.log('всего вакансий >>> ', allDataHH)
-		
-		console.log('ttttttt >>> ', tt)
-		return tt
-	}
-	
-	function allPages() {
-		let allP = 4;
-
-		
-		function per(n) {
-			for (let i = 0; i < allP; i++) {
-				fetch(`https://api.hh.ru/vacancies?professional_role=31&area=1146&per_page=100&page=${i}`)
-						.then(res=> res.json())
-						.then(data => current_db.push(data.items))
-					}
-		}per()
-
-		setTimeout(() => {
-			for (let i = 0; i < current_db.length; i++) {
-				current_db[i].forEach(e => {
-					tt.push(e)
-					
-				})
-				
-			}
-		}, 1000);
-		
+	const itemClickHandler = (e) => {
+		setReqInputValue(e.target.textContent)
+		setReqInput(e.target.textContent);
+		setIsOpen(!isOpen);
 	}
 
+	const inputClickHandler = () => {
+		setIsOpen(true);
+	}
+
+//запрос на получение данных с hh
+    function reqData() {
+		// if(fetching) {
+		// 	console.log(fetching);
+		// 	axios.get(`https://api.hh.ru/vacancies?clusters=true&text=сетевой администратор&area=113&per_page=100&page=${currentPage}`)
+		// 		// .then(res => res.json())
+		// 		.then(response => {
+		// 			setDataTable([...dataTable, ...response.data.items])
+		// 			setCurrentPage(prevState => prevState + 1)
+		// 			setTotalCount(response.data.pages)
+		// 			console.log(response)
+		// 	})
+		// 	.finally(() => setFetching(false))
+		// } else {
 
 		
-		//вывод подсказок при вводе в поле поиска:
-		const filteredRole = allProfRoleHH.filter(elem => {
-			return elem.name.toLowerCase().includes(reqInputValue.toLowerCase())
-		})
+        // console.log("сейчас reqSchedule", reqSchedule)
+        // console.log("сейчас reqInput", reqInput)
+        // console.log("сейчас reqArea", reqArea)
 
-		// поиск по таблице:
-		function tableSearch() {
-				var phrase = document.querySelector('.search-form__input');
-				var table = document.querySelector('#table');
-				var regPhrase = new RegExp(phrase.value, 'i');
-				var flag = false;
-				for (var i = 1; i < table.rows.length; i++) {
-						flag = false;
-						for (var j = table.rows[i].cells.length - 1; j >= 0; j--) {
-								flag = regPhrase.test(table.rows[i].cells[j].innerHTML);
-								if (flag) break;
-						}
-						if (flag) {
-								table.rows[i].style.display = "";
-						} else {
-								table.rows[i].style.display = "none";
-						}
-		
-				}
+        let id_area = "113";
+        if(reqArea === "undefined") {
+            return id_area = 113;
+        } else {
+            areas_db.forEach(elem => {
+                if(elem.name === reqArea) {
+                    return (id_area = elem.id, setIdArea(elem.id));
+                }
+            })
+        }
+
+        let id_rol = 1;
+        allProfRoleHH.forEach(elem => {
+            if(elem.name.toLowerCase() == reqInput.toLowerCase()){
+                return (id_rol = elem.id, setIdRole(elem.id))
+            }
+        })
+        schedule_db.forEach(elem => {
+            if(elem.name === reqSchedule) {
+                fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_rol}&area=${id_area}&per_page=100&page=0&schedule=${elem.id}`)
+                    .then(res => res.json())
+                    .then(data => (setDataHH(data), setAllPagesHH(data.pages), setDataTable(data.items)))
+            }
+            if(reqSchedule === undefined || reqSchedule === "График не задан") {
+                fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_rol}&area=${id_area}&per_page=100&page=0`)
+                    .then(res => res.json())
+                    .then(data => (setDataHH(data), setAllPagesHH(data.pages), setDataTable(data.items)))
+            }
+        })
+	// }
+    }
+
+// поиск по таблице:
+    function tableSearch() {
+        var phrase = document.querySelector('.search-form__input');
+        var table = document.querySelector('#table');
+        var regPhrase = new RegExp(phrase.value, 'i');
+        var flag = false;
+        for (var i = 1; i < table.rows.length; i++) {
+            flag = false;
+            for (var j = table.rows[i].cells.length - 1; j >= 0; j--) {
+                flag = regPhrase.test(table.rows[i].cells[j].innerHTML);
+                if (flag) break;
+            }
+            if (flag) {
+                    table.rows[i].style.display = "";
+            } else {
+                    table.rows[i].style.display = "none";
+            }
+
+        }
+    }
+
+// сортировка таблицы по столбцам:
+	function sortNumber(id) {
+		const table = document.querySelector('#table')
+		if(sortedField === "there") {
+			setSortedField("here");
+			let sortedRows = Array.from(table.rows)
+				.slice(1)
+				.sort((rowA, rowB) => parseInt(rowA.cells[id].textContent) > parseInt(rowB.cells[id].textContent) ? 1 : -1);
+			table.tBodies[0].append(...sortedRows);
+		} else {
+			setSortedField("there");
+			let sortedRows = Array.from(table.rows)
+				.slice(1)
+			    .sort((rowB, rowA) => parseInt(rowB.cells[id].textContent) > parseInt(rowA.cells[id].textContent) ? -1 : 1);
+			table.tBodies[0].append(...sortedRows);
 		}
-
-			// сортировка таблицы по столбцам:
-			function sortColumn(id) {
-				const table = document.querySelector('#table')
-				if(sortedField === "there") {
-						setSortedField("here");
-						let sortedRows = Array.from(table.rows)
-						.slice(1)
-						.sort((rowA, rowB) => rowA.cells[id].innerHTML > rowB.cells[id].innerHTML ? 1 : -1);
-						table.tBodies[0].append(...sortedRows);
-				} else {
-						setSortedField("there");
-						let sortedRows = Array.from(table.rows)
-						.slice(1)
-						.sort((rowB, rowA) => rowB.cells[id].innerHTML > rowA.cells[id].innerHTML ? -1 : 1);
-						table.tBodies[0].append(...sortedRows);
-				}
+	}
+	function sortSalary(id) {
+		const table = document.querySelector('#table')
+		if(sortedField === "there") {
+			setSortedField("here");
+			let sortedRows = Array.from(table.rows)
+				.slice(1)
+				// .forEach(rowA => {
+				// 	console.log("прилёт", rowA.cells[id].innerHTML)
+				// })
+				.sort((rowA, rowB) => rowA.cells[id].textContent.substr(0, 6) > rowB.cells[id].textContent.substr(0, 6) ? 1 : -1);
+			table.tBodies[0].append(...sortedRows);
+		} else {
+			setSortedField("there");
+			let sortedRows = Array.from(table.rows)
+				.slice(1)
+			    .sort((rowB, rowA) => rowB.cells[id].textContent.substr(0, 6) > rowA.cells[id].textContent.substr(0, 6) ? -1 : 1);
+			table.tBodies[0].append(...sortedRows);
 		}
-
-
-
-		// useEffect(() => {
-		// 		const searchInput = document.querySelector('.request-form__input');
-		// 		const searchOptions = document.querySelector('.options');
-
-		// 		function getOptions(word, stations) {
-		// 			return allProfRoleHH.filter(s => {
-		// 				// Определить совпадает ли то что мы вбили в input
-		// 				// названиям станций внутри массива
-				
-		// 				const regex = new RegExp(word, 'gi');
-		// 				return s.name.match(regex);
-		// 			})
-		// 		}
-				
-		// 		function displayOptions() {
-				
-		// 			console.log('this.value >> ', this.value);
-				
-		// 			const options = getOptions(this.value, allProfRoleHH);
-				
-		// 			const html = options
-		// 				.map(station => {
-		// 					const regex = new RegExp(this.value, 'gi');
-		// 					const stationName = station.name.replace(regex, 
-		// 							`<span className="hl">${this.value}</span>`
-		// 						)
-				
-		// 					return `<li><span>${stationName}</span></li>`;
-		// 				})
-		// 				.slice(0, 10)
-		// 				.join('');
-				
-		// 			// searchOptions.innerHTML = this.value ? html : null;
-		// 		}
-		// 		searchInput.addEventListener('change', displayOptions);
-		// 		searchInput.addEventListener('keyup', displayOptions);
-		// })
-
-		const itemClickHandler = (e) => {
-				setReqInputValue(e.target.textContent)
-				setIsOpen(!isOpen);
+	}
+	function sortText(id) {
+		const table = document.querySelector('#table')
+		if(sortedField === "there") {
+			setSortedField("here");
+			let sortedRows = Array.from(table.rows)
+				.slice(1)
+				.sort((rowA, rowB) => rowA.cells[id].textContent > rowB.cells[id].textContent ? 1 : -1);
+			table.tBodies[0].append(...sortedRows);
+		} else {
+			setSortedField("there");
+			let sortedRows = Array.from(table.rows)
+				.slice(1)
+			    .sort((rowB, rowA) => rowB.cells[id].textContent > rowA.cells[id].textContent ? -1 : 1);
+			table.tBodies[0].append(...sortedRows);
 		}
+	}
 
-		const inputClickHandler = () => {
-			setIsOpen(true);
-		}
+//отслеживание скролла:
+    let prevScrollpos = window.pageYOffset;
+    window.onscroll = function() {
+        let currentScrollPos = window.pageYOffset;
+        // const headerBlock = document.querySelector('.nav-bar');
+        const btnUp = document.querySelector('.btnPageUp');
+        if (prevScrollpos > currentScrollPos) {
+            // headerBlock.style.top = "0";
+            btnUp.style.display = "none";
+        } else {
+            // headerBlock.style.top = "-50px";
+            btnUp.style.display = "block";
+        }
+        prevScrollpos = currentScrollPos;
+    }
+//подняться на верх страницы:
+	function pageUpHandler() {
+        window.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: 'smooth',
+        });
+    }
 
-	return (
-			<div className="App">
-					<header className="App-header">
-						<a className="App-link" href="#" rel="noopener noreferrer" onClick={clog}> количество и запуск</a>
-					</header>
+    return (
+        <div className={dataTable.length === 0 ? "home-page home-page_center" : "home-page"}>
+			<header className="header">
+				<h1 className="header__title">Поиск вакансий hh.ru</h1>
+        	</header>
 
+			<main className="main">
+				<div className="request-box">
+					<form className="request-form">
+						<div className="request-box">
+							<input className="request-form__input" value={reqInputValue} type="text" placeholder="Название вакансии..." onKeyUp={(e) => setReqInput(e.target.value)} onChange={(e) => setReqInputValue(e.target.value)} onClick={inputClickHandler}/>
+							<ul className="autocomplete">
+								{reqInputValue && isOpen ? filteredRole.map((role, index) => {
+									return (
+										<li className="autocomplete__item" key={index} onClick={itemClickHandler}>{role.name}</li>
+									)
+								}) : null}
+							</ul>
+						</div>
+						<div className="request-container">
+							<select className="request-form__select" onChange={(e) => setReqSchedule(e.target.value)}>
+								<option>График не задан</option>
+								{schedule_db.map((elem, index) => {
+									return (
+										<option id={elem.id} key={index}>{elem.name}</option>
+									)
+								})}
+							</select>
+							<select className="request-form__select" onChange={(e) => setReqArea(e.target.value)}>
+								{areas_db.map((elem, index) => {
+									return (
+										<option id={elem.id} key={index}>{elem.name}</option>
+									)
+								})}
+							</select>
+						</div>
+						<button className="request-form__btn" type="button" onClick={reqData}>Поиск</button>
+					</form>
+				</div>
 
+				{dataTable.length !== 0 ? <div className="search-box">
+					 <form className="search-form">
+						<input className="search-form__input" type="text" placeholder="Поиск по таблице..." onKeyUp={tableSearch}/>
+					</form>
+				</div> : null}
+				<div className="table-box">
+					{dataTable.length !== 0 ? <table className="table" id="table">
+						<thead>
+							<tr className="table-head">
+								<th id="0" className="table-head__elem" onClick={(e) => sortNumber(e.currentTarget.id)}>№</th>
+								<th id="1" className="table-head__elem" onClick={(e) => sortText(e.currentTarget.id)}>Вакансия</th>
+								<th id="2" className="table-head__elem" onClick={(e) => sortSalary(e.currentTarget.id)}>Зарплата</th>
+								<th id="3" className="table-head__elem" onClick={(e) => sortText(e.currentTarget.id)}>Направление</th>
+								<th id="4" className="table-head__elem" onClick={(e) => sortText(e.currentTarget.id)}>Работодатель</th>
+								<th id="5" className="table-head__elem" onClick={(e) => sortText(e.currentTarget.id)}>Адрес</th>
+								<th id="6" className="table-head__elem" onClick={(e) => sortText(e.currentTarget.id)}>Занятость</th>
+								<th id="7" className="table-head__elem" onClick={(e) => sortText(e.currentTarget.id)}>Опыт</th>
+								<th id="8" className="table-head__elem" onClick={(e) => sortText(e.currentTarget.id)}>Дата публикации</th>
+							</tr>
+						</thead>
 
-					<main>
-
-							<div className="request-box">
-									<form className="request-form">
-											<input className="request-form__input" value={reqInputValue} type="text" placeholder="вакансия" onKeyUp={(e) => setReqInput(e.target.value)} onChange={(e) => setReqInputValue(e.target.value)} onClick={inputClickHandler}/>
-											
-											{/* <ul className="options">
-        											<li>названия</li>
-      										</ul> */}
-
-											<ul className="autocomplete">
-												{reqInputValue && isOpen ? filteredRole.map((role, index) => {
-													return (
-														<li className="autocomplete__item" key={index} onClick={itemClickHandler}>{role.name}</li>
-													)
-												}) : null}
-											</ul>
-
-											<div className="list-box">
-													<select>
-															{filteredRole.map((elem, index) => {
-																	return (
-																			<option key={index}>{elem.name}</option>
-																	)
-															})}
-													</select>
-											</div>
-											
-											<select onChange={(e) => setReqSchedule(e.target.value)}>
-													<option>График не задан</option>
-													{schedule_db.map((elem, index) => {
-															return (
-																	<option id={elem.id} key={index}>{elem.name}</option>
-															)
-													})}
-											</select>
-
-											<select onChange={(e) => setReqArea(e.target.value)}>
-													{areas_db.map((elem, index) => {
-															return (
-																	<option id={elem.id} key={index}>{elem.name}</option>
-															)
-													})}
-											</select>
-
-											<button className="request-form__btn" type="button" onClick={reqData}>Запрос</button>
-									</form>
-							</div>
-
-							<div className="search-box">
-									<form className="search-form">
-											<input className="search-form__input" type="text" placeholder="Поиск..." onKeyUp={tableSearch}/>
-											{/* <button className="search-form__btn" type="button"><img className="search-form__btn_img" src={searchImg} alt="поиск"></img></button> */}
-									</form>
-							</div>
-
-							<div className="table-box">
-									<table className="table" id="table">
-											<thead>
-													<tr className="table-head">
-															<th id="0" className="table-head__elem">№</th>
-															<th id="1" className="table-head__elem">name</th>
-															<th id="2" className="table-head__elem">salary</th>
-															<th id="3" className="table-head__elem" onClick={(e) => sortColumn(e.currentTarget.id)}>area</th>
-															<th id="4" className="table-head__elem">employer</th>
-															<th id="5" className="table-head__elem" onClick={(e) => sortColumn(e.currentTarget.id)}>address</th>
-															<th id="6" className="table-head__elem">employment</th>
-															<th id="7" className="table-head__elem" onClick={(e) => sortColumn(e.currentTarget.id)}>experience</th>
-															<th id="8" className="table-head__elem">published_at</th>
-													</tr>
-											</thead>
-
-											<tbody> 
-													{dataTable.map((elem, index) => {
-															return (
-																	<tr className="table-body" key={index}>
-																			<td className="table-body__elem">{index+1}</td>
-																			<td className="table-body__elem"><a href={elem.alternate_url} target="_blank">{elem.name}</a></td>
-																			<td className="table-body__elem">{elem.salary === null ? "не указано" : (elem.salary.from === elem.salary.to ? elem.salary.from : (elem.salary.from !== null & elem.salary.to !== null ? elem.salary.from + " - " + elem.salary.to : (elem.salary.from === null ? elem.salary.to : elem.salary.from)))} {elem.salary !== null ? elem.salary.currency : null}</td>
-																			<td className="table-body__elem">{elem.area.name}</td>
-																			<td className="table-body__elem"><a href={elem.employer.alternate_url} target="_blank">{elem.employer.name}</a></td>
-																			<td className="table-body__elem">{elem.address === null ? "не указан" : elem.address.city}</td>
-																			<td className="table-body__elem">{elem.employment.name}</td>
-																			<td className="table-body__elem">{elem.experience.name}</td>
-																			<td className="table-body__elem">{elem.published_at.split('T')[0].replace(/^(\d+)-(\d+)-(\d+)$/, `$3.$2.$1`)}</td>
-																	</tr>
-															)		
-													})}
-											</tbody>
-									</table>
-							</div>
-					</main>
-
-
-
-			</div>
-	);
+						<tbody> 
+							{dataTable.map((elem, index) => {
+								return (
+									<tr className="table-body" key={index}>
+										<td className="table-body__elem">{index+1}</td>
+										<td className="table-body__elem"><a href={elem.alternate_url} target="_blank">{elem.name}</a></td>
+										<td className="table-body__elem">{elem.salary === null ? "не указана" : (elem.salary.from === elem.salary.to ? elem.salary.from : (elem.salary.from !== null & elem.salary.to !== null ? elem.salary.from + " - " + elem.salary.to : (elem.salary.from === null ? elem.salary.to : elem.salary.from)))} {elem.salary !== null ? elem.salary.currency : null}</td>
+										<td className="table-body__elem">{elem.area.name}</td>
+										<td className="table-body__elem"><a href={elem.employer.alternate_url} target="_blank">{elem.employer.name}</a></td>
+										<td className="table-body__elem">{elem.address === null ? "не указан" : elem.address.city}</td>
+										<td className="table-body__elem">{elem.employment.name}</td>
+										<td className="table-body__elem">{elem.experience.name}</td>
+										<td className="table-body__elem">{elem.published_at.split('T')[0].replace(/^(\d+)-(\d+)-(\d+)$/, `$3.$2.$1`)}</td>
+									</tr>
+								)		
+							})}
+						</tbody>
+					</table> : null}
+				</div>
+			</main>
+			<button className="btnPageUp" type="button" onClick={pageUpHandler}>наверх</button>
+			{/* <button className="btnPageUpTest" type="button" onClick={setBtnTest(true)}>дальше</button> */}
+			{dataTable.length === 0 ? <div>
+			<a className="coop" href='https://krasintegra.ru/' target="_blank">&#169; 2023 krasintegra.ru</a>
+			<p className="version">v. 1.0.1</p> </div> : null}
+		</div>
+    )
 }
 
-export default App;
+export default Test;

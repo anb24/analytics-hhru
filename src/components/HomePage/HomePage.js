@@ -4,12 +4,17 @@ import './HomePage.css';
 
 function HomePage() {
 
+	// const [photos, setPhotos] = useState([]); //тестовая для загрузки ваканчий постранично
+	// const [totalCount, setTotalCount] = useState(0);
+
     const [profRoleHH, setProfRoleHH] = useState([]);  //все названия вакансий по группам
 	const [allProfRoleHH, setAllProfRoleHH] = useState([]);  //все названия вакансий без группировки
 	const [reqInputValue, setReqInputValue] = useState(''); //текущее значение поля поиска req
 	const [isOpen, setIsOpen] = useState(true); //открытие-ззакрытие поля подсказок в поиске
 	const [dataHH, setDataHH] = useState([]); //весь ответ
+	// const [currentPage, setCurrentPage] = useState(0); //текущая страница
 	const [allPagesHH, setAllPagesHH] = useState(); //всего страниц
+	// const [fetching, setFetching] = useState(true); //флаг для загрузки данных
 	const [dataTable, setDataTable] = useState([]); //только вакансии из ответа
 	const [reqArea, setReqArea] = useState(); //значение поля регион
 	const [reqInput, setReqInput] = useState(''); //значение поля поиска req
@@ -20,6 +25,32 @@ function HomePage() {
     const areas_db = [{id:"113",name:"Регион не задан"},{id:"1",name:"Москва"},{id:"54",name:"Красноярск"},{id:"1146",name:"Красноярский край"},{id:"1124",name:"Иркутская область"},{id:"1169",name:"Республика Тыва"},{id:"1187",name:"Республика Хакасия"},{id:"1229",name:"Кемеровская область"},{id:"1255",name:"Томская область"},{id:"1216",name:"Республика Алтай"},{id:"1217",name:"Алтайский край"},{id:"1202",name:"Новосибирская область"},{id:"1249",name:"Омская область"}];
 
 	console.log(dataHH);
+
+
+
+	// useEffect(() => {
+	// 	console.log(fetching);
+	// 	fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=1&area=113&per_page=100&page=${currentPage}`)
+    //         .then(res => res.json())
+    //         .then(data => (setPhotos(...photos, ...data.items), setCurrentPage(prevState => prevState + 1), setTotalCount(data.headers['x-total-count'])))
+	// 		.finally(() => setFetching(false))
+	// }, [fetching])
+
+	// useEffect(() => {
+	// 	document.addEventListener('scroll', scrollHandler)
+
+	// 	return function() {
+	// 		document.removeEventListener('scroll', scrollHandler);
+	// 	}
+	// }, [])
+
+	// const scrollHandler = (e) => {
+	// 	if (e.target.documentElement.scrollHeight - (e.target.documentElement.scrollTop - window.innerHeight) < 100) {
+	// 		setFetching(true)
+	// 	}	
+	// }
+
+
 
 //получаем все названия вакансий по группам
 	useEffect(() => {
@@ -119,22 +150,81 @@ function HomePage() {
     }
 
 // сортировка таблицы по столбцам:
-	function sortColumn(id) {
+	function sortNumber(id) {
 		const table = document.querySelector('#table')
 		if(sortedField === "there") {
 			setSortedField("here");
 			let sortedRows = Array.from(table.rows)
 				.slice(1)
-				.sort((rowA, rowB) => rowA.cells[id].innerHTML > rowB.cells[id].innerHTML ? 1 : -1);
+				.sort((rowA, rowB) => parseInt(rowA.cells[id].textContent) > parseInt(rowB.cells[id].textContent) ? 1 : -1);
 			table.tBodies[0].append(...sortedRows);
 		} else {
 			setSortedField("there");
 			let sortedRows = Array.from(table.rows)
 				.slice(1)
-			    .sort((rowB, rowA) => rowB.cells[id].innerHTML > rowA.cells[id].innerHTML ? -1 : 1);
+			    .sort((rowB, rowA) => parseInt(rowB.cells[id].textContent) > parseInt(rowA.cells[id].textContent) ? -1 : 1);
 			table.tBodies[0].append(...sortedRows);
 		}
 	}
+	function sortSalary(id) {
+		const table = document.querySelector('#table')
+		if(sortedField === "there") {
+			setSortedField("here");
+			let sortedRows = Array.from(table.rows)
+				.slice(1)
+				// .forEach(rowA => {
+				// 	console.log("прилёт", rowA.cells[id].innerHTML)
+				// })
+				.sort((rowA, rowB) => rowA.cells[id].textContent.substr(0, 6) > rowB.cells[id].textContent.substr(0, 6) ? 1 : -1);
+			table.tBodies[0].append(...sortedRows);
+		} else {
+			setSortedField("there");
+			let sortedRows = Array.from(table.rows)
+				.slice(1)
+			    .sort((rowB, rowA) => rowB.cells[id].textContent.substr(0, 6) > rowA.cells[id].textContent.substr(0, 6) ? -1 : 1);
+			table.tBodies[0].append(...sortedRows);
+		}
+	}
+	function sortText(id) {
+		const table = document.querySelector('#table')
+		if(sortedField === "there") {
+			setSortedField("here");
+			let sortedRows = Array.from(table.rows)
+				.slice(1)
+				.sort((rowA, rowB) => rowA.cells[id].textContent > rowB.cells[id].textContent ? 1 : -1);
+			table.tBodies[0].append(...sortedRows);
+		} else {
+			setSortedField("there");
+			let sortedRows = Array.from(table.rows)
+				.slice(1)
+			    .sort((rowB, rowA) => rowB.cells[id].textContent > rowA.cells[id].textContent ? -1 : 1);
+			table.tBodies[0].append(...sortedRows);
+		}
+	}
+
+//отслеживание скролла:
+    let prevScrollpos = window.pageYOffset;
+    window.onscroll = function() {
+        let currentScrollPos = window.pageYOffset;
+        // const headerBlock = document.querySelector('.nav-bar');
+        const btnUp = document.querySelector('.btnPageUp');
+        if (prevScrollpos > currentScrollPos) {
+            // headerBlock.style.top = "0";
+            btnUp.style.display = "none";
+        } else {
+            // headerBlock.style.top = "-50px";
+            btnUp.style.display = "block";
+        }
+        prevScrollpos = currentScrollPos;
+    }
+//подняться на верх страницы:
+	function pageUpHandler() {
+        window.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: 'smooth',
+        });
+    }
 
     return (
         <div className={dataTable.length === 0 ? "home-page home-page_center" : "home-page"}>
@@ -185,15 +275,15 @@ function HomePage() {
 					{dataTable.length !== 0 ? <table className="table" id="table">
 						<thead>
 							<tr className="table-head">
-								<th id="0" className="table-head__elem">№</th>
-								<th id="1" className="table-head__elem">Вакансия</th>
-								<th id="2" className="table-head__elem">Зарплата</th>
-								<th id="3" className="table-head__elem" onClick={(e) => sortColumn(e.currentTarget.id)}>Направление</th>
-								<th id="4" className="table-head__elem">Работодатель</th>
-								<th id="5" className="table-head__elem" onClick={(e) => sortColumn(e.currentTarget.id)}>Адрес</th>
-								<th id="6" className="table-head__elem">Занятость</th>
-								<th id="7" className="table-head__elem" onClick={(e) => sortColumn(e.currentTarget.id)}>Опыт</th>
-								<th id="8" className="table-head__elem">Дата публикации</th>
+								<th id="0" className="table-head__elem" onClick={(e) => sortNumber(e.currentTarget.id)}>№</th>
+								<th id="1" className="table-head__elem" onClick={(e) => sortText(e.currentTarget.id)}>Вакансия</th>
+								<th id="2" className="table-head__elem" onClick={(e) => sortSalary(e.currentTarget.id)}>Зарплата</th>
+								<th id="3" className="table-head__elem" onClick={(e) => sortText(e.currentTarget.id)}>Направление</th>
+								<th id="4" className="table-head__elem" onClick={(e) => sortText(e.currentTarget.id)}>Работодатель</th>
+								<th id="5" className="table-head__elem" onClick={(e) => sortText(e.currentTarget.id)}>Адрес</th>
+								<th id="6" className="table-head__elem" onClick={(e) => sortText(e.currentTarget.id)}>Занятость</th>
+								<th id="7" className="table-head__elem" onClick={(e) => sortText(e.currentTarget.id)}>Опыт</th>
+								<th id="8" className="table-head__elem" onClick={(e) => sortText(e.currentTarget.id)}>Дата публикации</th>
 							</tr>
 						</thead>
 
@@ -203,7 +293,7 @@ function HomePage() {
 									<tr className="table-body" key={index}>
 										<td className="table-body__elem">{index+1}</td>
 										<td className="table-body__elem"><a href={elem.alternate_url} target="_blank">{elem.name}</a></td>
-										<td className="table-body__elem">{elem.salary === null ? "не указано" : (elem.salary.from === elem.salary.to ? elem.salary.from : (elem.salary.from !== null & elem.salary.to !== null ? elem.salary.from + " - " + elem.salary.to : (elem.salary.from === null ? elem.salary.to : elem.salary.from)))} {elem.salary !== null ? elem.salary.currency : null}</td>
+										<td className="table-body__elem">{elem.salary === null ? "не указана" : (elem.salary.from === elem.salary.to ? elem.salary.from : (elem.salary.from !== null & elem.salary.to !== null ? elem.salary.from + " - " + elem.salary.to : (elem.salary.from === null ? elem.salary.to : elem.salary.from)))} {elem.salary !== null ? elem.salary.currency : null}</td>
 										<td className="table-body__elem">{elem.area.name}</td>
 										<td className="table-body__elem"><a href={elem.employer.alternate_url} target="_blank">{elem.employer.name}</a></td>
 										<td className="table-body__elem">{elem.address === null ? "не указан" : elem.address.city}</td>
@@ -217,6 +307,10 @@ function HomePage() {
 					</table> : null}
 				</div>
 			</main>
+			<button className="btnPageUp" type="button" onClick={pageUpHandler}>наверх</button>
+			{dataTable.length === 0 ? <div>
+			<a className="coop" href='https://krasintegra.ru/' target="_blank">&#169; 2023 krasintegra.ru</a>
+			<p className="version">v. 1.0.1</p> </div> : null}
 		</div>
     )
 }
