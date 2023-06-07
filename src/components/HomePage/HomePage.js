@@ -28,14 +28,14 @@ function HomePage() {
 
 // //по ENTER
 // 	useEffect(() => {
-//         function handleEnter({ key }) {
-//             if (key === 'Enter') {
-//                 reqData();
-//             }
-//         }
-//         document.addEventListener('keydown', handleEnter);
-//         return () => document.removeEventListener('keydown', handleEnter);
-//     })
+// 		function handleEsc({ key }) {
+// 			if (key === 'Enter') {
+// 				reqData();
+// 			}
+// 		}
+// 		document.addEventListener('keydown', handleEsc);
+// 		return () => document.removeEventListener('keydown', handleEsc);
+// 	})
 
 //получаем все названия вакансий без группировки:
 	useEffect(() => {
@@ -320,7 +320,14 @@ function reqData() {
 				<div className="request-box">
 					<form className="request-form">
 						<div className="request-box">
-							<input className="request-form__input" value={reqInputValue} type="text" placeholder="Название вакансии..." onKeyUp={(e) => setReqInput(e.target.value)} onChange={(e) => setReqInputValue(e.target.value)} onClick={inputClickHandler}/>
+							<input className="request-form__input" name="request-input" list="roleTest" required autoFocus value={reqInputValue} type="text" placeholder="Название вакансии..." onKeyUp={(e) => setReqInput(e.target.value)} onChange={(e) => setReqInputValue(e.target.value)} onClick={inputClickHandler}/>
+							{/* <datalist className="autocomplete" id="roleTest">
+								{filteredRole.map((role, index) => {
+									return (
+										<option className="autocomplete__item" key={index}>{role.name}</option>
+									)	
+								})}
+   							</datalist> */}
 							<ul className="autocomplete">
 								{reqInputValue && isOpen ? filteredRole.map((role, index) => {
 									return (
