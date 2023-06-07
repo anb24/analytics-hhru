@@ -133,6 +133,7 @@
   background-color: #aadeee;
   position: sticky;
   top: -1px;
+  cursor: pointer;
 }
 
 .table-body__elem {

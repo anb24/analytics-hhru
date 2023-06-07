@@ -1,80 +1,125 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 
 import './HomePage.css';
 
 function HomePage() {
 
-	// const [photos, setPhotos] = useState([]); //тестовая для загрузки ваканчий постранично
-	// const [totalCount, setTotalCount] = useState(0);
-
-    const [profRoleHH, setProfRoleHH] = useState([]);  //все названия вакансий по группам
 	const [allProfRoleHH, setAllProfRoleHH] = useState([]);  //все названия вакансий без группировки
 	const [reqInputValue, setReqInputValue] = useState(''); //текущее значение поля поиска req
 	const [isOpen, setIsOpen] = useState(true); //открытие-ззакрытие поля подсказок в поиске
 	const [dataHH, setDataHH] = useState([]); //весь ответ
-	// const [currentPage, setCurrentPage] = useState(0); //текущая страница
-	const [allPagesHH, setAllPagesHH] = useState(); //всего страниц
-	// const [fetching, setFetching] = useState(true); //флаг для загрузки данных
+	const [allPagesHH, setAllPagesHH] = useState(1); //всего страниц
+	const [currentPage, setCurrentPage] = useState(1); //текущая страница
+	const [fetching, setFetching] = useState(false); //флаг для загрузки данных
 	const [dataTable, setDataTable] = useState([]); //только вакансии из ответа
 	const [reqArea, setReqArea] = useState(); //значение поля регион
 	const [reqInput, setReqInput] = useState(''); //значение поля поиска req
 	const [reqSchedule, setReqSchedule] = useState(); //значение поля график
 	const [sortedField, setSortedField] = useState("there"); //флаг для сортировки (направление)
+	const [idRole, setIdRole] = useState(1); //вакансия по умолчанию
+	const [idArea, setIdArea] = useState(113); //направление по уммолчанию
+	const [idSchedule, setIdSchedule] = useState(null); //графиик по умолчанию
 
     const schedule_db = [{id:"fullDay",name:"Полный день"},{id:"shift",name:"Сменный график"},{id:"flexible",name:"Гибкий график"},{id:"remote",name:"Удаленная работа"},{id:"flyInFlyOut",name:"Вахтовый метод"}];
     const areas_db = [{id:"113",name:"Регион не задан"},{id:"1",name:"Москва"},{id:"54",name:"Красноярск"},{id:"1146",name:"Красноярский край"},{id:"1124",name:"Иркутская область"},{id:"1169",name:"Республика Тыва"},{id:"1187",name:"Республика Хакасия"},{id:"1229",name:"Кемеровская область"},{id:"1255",name:"Томская область"},{id:"1216",name:"Республика Алтай"},{id:"1217",name:"Алтайский край"},{id:"1202",name:"Новосибирская область"},{id:"1249",name:"Омская область"}];
 
-	console.log(dataHH);
+	// console.log(dataHH);
 
-
-
-	// useEffect(() => {
-	// 	console.log(fetching);
-	// 	fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=1&area=113&per_page=100&page=${currentPage}`)
-    //         .then(res => res.json())
-    //         .then(data => (setPhotos(...photos, ...data.items), setCurrentPage(prevState => prevState + 1), setTotalCount(data.headers['x-total-count'])))
-	// 		.finally(() => setFetching(false))
-	// }, [fetching])
-
-	// useEffect(() => {
-	// 	document.addEventListener('scroll', scrollHandler)
-
-	// 	return function() {
-	// 		document.removeEventListener('scroll', scrollHandler);
-	// 	}
-	// }, [])
-
-	// const scrollHandler = (e) => {
-	// 	if (e.target.documentElement.scrollHeight - (e.target.documentElement.scrollTop - window.innerHeight) < 100) {
-	// 		setFetching(true)
-	// 	}	
-	// }
-
-
-
-//получаем все названия вакансий по группам
-	useEffect(() => {
-        fetch(`https://api.hh.ru/professional_roles`)
-            .then(res=> res.json())
-            .then(data => setProfRoleHH(data.categories));
-    }, [])
+// //по ENTER
+// 	useEffect(() => {
+//         function handleEnter({ key }) {
+//             if (key === 'Enter') {
+//                 reqData();
+//             }
+//         }
+//         document.addEventListener('keydown', handleEnter);
+//         return () => document.removeEventListener('keydown', handleEnter);
+//     })
 
 //получаем все названия вакансий без группировки:
 	useEffect(() => {
-        function gettingAll() {
-            const allProfRoleHH = [];
-            profRoleHH.forEach(elem => {
-                allProfRoleHH.push(elem.roles)
-            })
-            const allRole = [];
-            for (let i = 0; i < allProfRoleHH.length; i++) {
-                allProfRoleHH[i].forEach(e => {
-                    allRole.push(e)
-                })
-            }
-            setAllProfRoleHH(allRole)
-        }gettingAll()
-    }, [profRoleHH])
+		axios.get(`https://api.hh.ru/professional_roles`)
+			.then(response => {
+				// console.log("c графиком(schedule) >>> ", response.data.categories)
+				const data = response.data.categories;
+				const allProfRoleHH = []
+				data.forEach(elem => {
+					allProfRoleHH.push(elem.roles)
+				})
+				const allRole = []
+				for(let i = 0; i < allProfRoleHH.length; i++)  {
+					allProfRoleHH[i].forEach(e => {
+						allRole.push(e)
+					})
+				}
+				setAllProfRoleHH(allRole)
+		})
+	}, [])
+
+//динамическая пагинация:
+	useEffect(() => {
+		if(idRole === undefined) {
+			if(fetching === true) {
+				if(idSchedule !== undefined) {
+					axios.get(`https://api.hh.ru/vacancies?clusters=true&text=${reqInput}&area=${idArea}&per_page=100&page=${currentPage}&schedule=${idSchedule}`)
+						.then(response => {
+							setDataTable([...dataTable, ...response.data.items])
+							setCurrentPage(prevState => prevState + 1)
+							// console.log("c графиком(schedule) >>> ", response)
+							// console.log("сейчас " + currentPage + " < " + allPagesHH)
+						})
+						.finally(() => setFetching(false))
+					}
+				if(idSchedule === undefined) {
+					axios.get(`https://api.hh.ru/vacancies?clusters=true&text=${reqInput}&area=${idArea}&per_page=100&page=${currentPage}`)
+						.then(response => {
+							setDataTable([...dataTable, ...response.data.items])
+							setCurrentPage(prevState => prevState + 1)
+							// console.log("без графика(schedule) >>> ", response)
+							// console.log("сейчас " + currentPage + " < " + allPagesHH)
+						})
+						.finally(() => setFetching(false))
+					}
+			}
+		} else {
+			if(fetching === true) {
+				if(idSchedule !== undefined) {
+					axios.get(`https://api.hh.ru/vacancies?clusters=true&professional_role=${idRole}&area=${idArea}&per_page=100&page=${currentPage}&schedule=${idSchedule}`)
+						.then(response => {
+							setDataTable([...dataTable, ...response.data.items])
+							setCurrentPage(prevState => prevState + 1)
+							// console.log("c графиком(schedule) >>> ", response)
+							// console.log("сейчас " + currentPage + " < " + allPagesHH)
+						})
+						.finally(() => setFetching(false))
+					}
+				if(idSchedule === undefined) {
+					axios.get(`https://api.hh.ru/vacancies?clusters=true&professional_role=${idRole}&area=${idArea}&per_page=100&page=${currentPage}`)
+						.then(response => {
+							setDataTable([...dataTable, ...response.data.items])
+							setCurrentPage(prevState => prevState + 1)
+							// console.log("без графика(schedule) >>> ", response)
+							// console.log("сейчас " + currentPage + " < " + allPagesHH)
+						})
+						.finally(() => setFetching(false))
+					}
+			}
+		}
+	}, [fetching])
+
+	useEffect(() => {
+		const scrollHandler = (e) => {
+			if(e.target.documentElement.scrollHeight - (e.target.documentElement.scrollTop + window.innerHeight) < 100 && parseInt(currentPage) <= parseInt(allPagesHH)) {
+				setFetching(true)
+				// console.log("<<< СКРОЛ ОТРАБОТАЛ >>>")
+			}
+		}
+		document.addEventListener('scroll', scrollHandler)
+		return function() {
+			document.removeEventListener('scroll', scrollHandler);
+		}
+	}, [])
 
 //вывод подсказок при вводе в поле поиска:
 	const filteredRole = allProfRoleHH.filter(elem => {
@@ -92,41 +137,80 @@ function HomePage() {
 	}
 
 //запрос на получение данных с hh
-    function reqData() {
-        // console.log("сейчас reqSchedule", reqSchedule)
-        // console.log("сейчас reqInput", reqInput)
-        console.log("сейчас reqArea", reqArea)
+function reqData() {
+	// console.log("сейчас reqSchedule", reqSchedule)
+	// console.log("сейчас reqInput", reqInput)
+	// console.log("сейчас reqArea", reqArea)
+	setCurrentPage(1);
+	let id_area = "113";
+	if(reqArea === "undefined") {
+		return (id_area = 113, setIdArea(113));
+	} else {
+		areas_db.forEach(elem => {
+			if(elem.name === reqArea) {
+				return (id_area = elem.id, setIdArea(elem.id));
+			}
+		})
+	}
 
-        let id_area = "113";
-        if(reqArea === "undefined") {
-            return id_area = 113;
-        } else {
-            areas_db.forEach(elem => {
-                if(elem.name === reqArea) {
-                    return id_area = elem.id;
-                }
-            })
-        }
+	let id_rol = 1;
 
-        let id_rol = 1;
-        allProfRoleHH.forEach(elem => {
-            if(elem.name.toLowerCase() == reqInput.toLowerCase()){
-                return id_rol = elem.id
-            }
-        })
-        schedule_db.forEach(elem => {
-            if(elem.name === reqSchedule) {
-                fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_rol}&area=${id_area}&per_page=100&page=0&schedule=${elem.id}`)
-                    .then(res => res.json())
-                    .then(data => (setDataHH(data), setAllPagesHH(data.pages), setDataTable(data.items)))
-            }
-            if(reqSchedule === undefined || reqSchedule === "График не задан") {
-                fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_rol}&area=${id_area}&per_page=100&page=0`)
-                    .then(res => res.json())
-                    .then(data => (setDataHH(data), setAllPagesHH(data.pages), setDataTable(data.items)))
-            }
-        })
-    }
+	const even = (element) => element.name.toLowerCase() !== reqInput.toLowerCase();
+	if(allProfRoleHH.some(even)) {
+		setIdRole(undefined)
+		schedule_db.forEach(elem => {
+			if(reqSchedule === undefined || reqSchedule === "График не задан") {
+				setIdSchedule(undefined)
+				fetch(`https://api.hh.ru/vacancies?clusters=true&text=${reqInput}&area=${id_area}&per_page=100&page=0`)
+					.then(res => res.json())
+					.then(data => {
+						setDataHH(data)
+						setAllPagesHH(data.pages)
+						setDataTable(data.items)
+					})
+			}
+			if(elem.name === reqSchedule) {
+				setIdSchedule(elem.id)
+				fetch(`https://api.hh.ru/vacancies?clusters=true&text=${reqInput}&area=${id_area}&per_page=100&page=0&schedule=${elem.id}`)
+					.then(res => res.json())
+					.then(data => {
+						setDataHH(data)
+						setAllPagesHH(data.pages)
+						setDataTable(data.items)
+					})
+			}
+		})
+	} else {
+		allProfRoleHH.forEach(elem => {
+			if(elem.name.toLowerCase() === reqInput.toLowerCase()) {
+				id_rol = elem.id
+				setIdRole(elem.id)
+				schedule_db.forEach(elem => {
+					if(reqSchedule === undefined || reqSchedule === "График не задан") {
+						setIdSchedule(undefined)
+						fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_rol}&area=${id_area}&per_page=100&page=0`)
+							.then(res => res.json())
+							.then(data => {
+								setDataHH(data)
+								setAllPagesHH(data.pages)
+								setDataTable(data.items)
+							})
+					}
+					if(elem.name === reqSchedule) {
+						setIdSchedule(elem.id)
+						fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_rol}&area=${id_area}&per_page=100&page=0&schedule=${elem.id}`)
+							.then(res => res.json())
+							.then(data => {
+								setDataHH(data)
+								setAllPagesHH(data.pages)
+								setDataTable(data.items)
+							})
+					}
+				})	
+			}
+		})
+	}  
+}
 
 // поиск по таблице:
     function tableSearch() {
@@ -175,13 +259,13 @@ function HomePage() {
 				// .forEach(rowA => {
 				// 	console.log("прилёт", rowA.cells[id].innerHTML)
 				// })
-				.sort((rowA, rowB) => rowA.cells[id].textContent.substr(0, 6) > rowB.cells[id].textContent.substr(0, 6) ? 1 : -1);
+				.sort((rowA, rowB) => parseInt(rowA.cells[id].textContent.substr(0, 6)) > parseInt(rowB.cells[id].textContent.substr(0, 6)) ? 1 : -1);
 			table.tBodies[0].append(...sortedRows);
 		} else {
 			setSortedField("there");
 			let sortedRows = Array.from(table.rows)
 				.slice(1)
-			    .sort((rowB, rowA) => rowB.cells[id].textContent.substr(0, 6) > rowA.cells[id].textContent.substr(0, 6) ? -1 : 1);
+			    .sort((rowB, rowA) => parseInt(rowB.cells[id].textContent.substr(0, 6)) > parseInt(rowA.cells[id].textContent.substr(0, 6)) ? -1 : 1);
 			table.tBodies[0].append(...sortedRows);
 		}
 	}
@@ -292,11 +376,11 @@ function HomePage() {
 								return (
 									<tr className="table-body" key={index}>
 										<td className="table-body__elem">{index+1}</td>
-										<td className="table-body__elem"><a href={elem.alternate_url} target="_blank">{elem.name}</a></td>
-										<td className="table-body__elem">{elem.salary === null ? "не указана" : (elem.salary.from === elem.salary.to ? elem.salary.from : (elem.salary.from !== null & elem.salary.to !== null ? elem.salary.from + " - " + elem.salary.to : (elem.salary.from === null ? elem.salary.to : elem.salary.from)))} {elem.salary !== null ? elem.salary.currency : null}</td>
+										<td className="table-body__elem"><a href={elem.alternate_url} target="_blank" rel="noreferrer">{elem.name}</a></td>
+										<td className="table-body__elem">{elem.salary === null ? 0 : (elem.salary.from === elem.salary.to ? elem.salary.from : (elem.salary.from !== null & elem.salary.to !== null ? elem.salary.from + " - " + elem.salary.to : (elem.salary.from === null ? elem.salary.to : elem.salary.from)))} {elem.salary !== null ? elem.salary.currency : null}</td>
 										<td className="table-body__elem">{elem.area.name}</td>
-										<td className="table-body__elem"><a href={elem.employer.alternate_url} target="_blank">{elem.employer.name}</a></td>
-										<td className="table-body__elem">{elem.address === null ? "не указан" : elem.address.city}</td>
+										<td className="table-body__elem"><a href={elem.employer.alternate_url} target="_blank" rel="noreferrer">{elem.employer.name}</a></td>
+										<td className="table-body__elem">{elem.address === null ? "" : elem.address.city}</td>
 										<td className="table-body__elem">{elem.employment.name}</td>
 										<td className="table-body__elem">{elem.experience.name}</td>
 										<td className="table-body__elem">{elem.published_at.split('T')[0].replace(/^(\d+)-(\d+)-(\d+)$/, `$3.$2.$1`)}</td>
@@ -309,7 +393,7 @@ function HomePage() {
 			</main>
 			<button className="btnPageUp" type="button" onClick={pageUpHandler}>наверх</button>
 			{dataTable.length === 0 ? <div>
-			<a className="coop" href='https://krasintegra.ru/' target="_blank">&#169; 2023 krasintegra.ru</a>
+			<a className="coop" href='https://krasintegra.ru/' target="_blank" rel="noreferrer">&#169; 2023 krasintegra.ru</a>
 			<p className="version">v. 1.0.1</p> </div> : null}
 		</div>
     )

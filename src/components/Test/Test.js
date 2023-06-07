@@ -5,10 +5,6 @@ import "./Test.css";
 
 function Test() {
 
-	const [photos, setPhotos] = useState([]); //тестовая для загрузки ваканчий постранично
-	const [totalCount, setTotalCount] = useState(0);
-
-    const [profRoleHH, setProfRoleHH] = useState([]);  //все названия вакансий по группам
 	const [allProfRoleHH, setAllProfRoleHH] = useState([]);  //все названия вакансий без группировки
 	const [reqInputValue, setReqInputValue] = useState(''); //текущее значение поля поиска req
 	const [isOpen, setIsOpen] = useState(true); //открытие-ззакрытие поля подсказок в поиске
@@ -21,125 +17,98 @@ function Test() {
 	const [reqInput, setReqInput] = useState(''); //значение поля поиска req
 	const [reqSchedule, setReqSchedule] = useState(); //значение поля график
 	const [sortedField, setSortedField] = useState("there"); //флаг для сортировки (направление)
+	const [idRole, setIdRole] = useState(1); //вакансия по умолчанию
+	const [idArea, setIdArea] = useState(113); //направление по уммолчанию
+	const [idSchedule, setIdSchedule] = useState(null); //графиик по умолчанию
 
     const schedule_db = [{id:"fullDay",name:"Полный день"},{id:"shift",name:"Сменный график"},{id:"flexible",name:"Гибкий график"},{id:"remote",name:"Удаленная работа"},{id:"flyInFlyOut",name:"Вахтовый метод"}];
     const areas_db = [{id:"113",name:"Регион не задан"},{id:"1",name:"Москва"},{id:"54",name:"Красноярск"},{id:"1146",name:"Красноярский край"},{id:"1124",name:"Иркутская область"},{id:"1169",name:"Республика Тыва"},{id:"1187",name:"Республика Хакасия"},{id:"1229",name:"Кемеровская область"},{id:"1255",name:"Томская область"},{id:"1216",name:"Республика Алтай"},{id:"1217",name:"Алтайский край"},{id:"1202",name:"Новосибирская область"},{id:"1249",name:"Омская область"}];
 
-	const [idRole, setIdRole] = useState(1);
-	const [idArea, setIdArea] = useState(113);
-
 	console.log(dataHH);
-	console.log(allPagesHH);
 
+//получаем все названия вакансий без группировки:
 	useEffect(() => {
-		if(fetching) {
-			console.log(fetching);
-			schedule_db.forEach(elem => {
-				if(elem.name === reqSchedule) {
-					axios.get(`https://api.hh.ru/vacancies?clusters=true&professional_role=${idRole}&area=${idArea}&per_page=100&page=${currentPage}&schedule=${elem.id}`)
+		axios.get(`https://api.hh.ru/professional_roles`)
+			.then(response => {
+				// console.log("c графиком(schedule) >>> ", response.data.categories)
+				const data = response.data.categories;
+				const allProfRoleHH = []
+				data.forEach(elem => {
+					allProfRoleHH.push(elem.roles)
+				})
+				const allRole = []
+				for(let i = 0; i < allProfRoleHH.length; i++)  {
+					allProfRoleHH[i].forEach(e => {
+						allRole.push(e)
+					})
+				}
+				setAllProfRoleHH(allRole)
+		})
+	}, [])
+
+//динамическая пагинация:
+	useEffect(() => {
+		if(idRole === undefined) {
+			if(fetching === true) {
+				if(idSchedule !== undefined) {
+					axios.get(`https://api.hh.ru/vacancies?clusters=true&text=${reqInput}&area=${idArea}&per_page=100&page=${currentPage}&schedule=${idSchedule}`)
 						.then(response => {
 							setDataTable([...dataTable, ...response.data.items])
 							setCurrentPage(prevState => prevState + 1)
-							setTotalCount(response.data.pages)
-							console.log("c schedule > ", response)
-							console.log(currentPage + " < " + allPagesHH)
+							console.log("c графиком(schedule) >>> ", response)
+							console.log("сейчас " + currentPage + " < " + allPagesHH)
 						})
 						.finally(() => setFetching(false))
 					}
-				if(reqSchedule === undefined || reqSchedule === "График не задан") {
+				if(idSchedule === undefined) {
+					axios.get(`https://api.hh.ru/vacancies?clusters=true&text=${reqInput}&area=${idArea}&per_page=100&page=${currentPage}`)
+						.then(response => {
+							setDataTable([...dataTable, ...response.data.items])
+							setCurrentPage(prevState => prevState + 1)
+							console.log("без графика(schedule) >>> ", response)
+							console.log("сейчас " + currentPage + " < " + allPagesHH)
+						})
+						.finally(() => setFetching(false))
+					}
+			}
+		} else {
+			if(fetching === true) {
+				if(idSchedule !== undefined) {
+					axios.get(`https://api.hh.ru/vacancies?clusters=true&professional_role=${idRole}&area=${idArea}&per_page=100&page=${currentPage}&schedule=${idSchedule}`)
+						.then(response => {
+							setDataTable([...dataTable, ...response.data.items])
+							setCurrentPage(prevState => prevState + 1)
+							console.log("c графиком(schedule) >>> ", response)
+							console.log("сейчас " + currentPage + " < " + allPagesHH)
+						})
+						.finally(() => setFetching(false))
+					}
+				if(idSchedule === undefined) {
 					axios.get(`https://api.hh.ru/vacancies?clusters=true&professional_role=${idRole}&area=${idArea}&per_page=100&page=${currentPage}`)
 						.then(response => {
 							setDataTable([...dataTable, ...response.data.items])
 							setCurrentPage(prevState => prevState + 1)
-							setTotalCount(response.data.pages)
-							console.log("без schedule > ", response)
-							console.log(currentPage + " < " + allPagesHH)
+							console.log("без графика(schedule) >>> ", response)
+							console.log("сейчас " + currentPage + " < " + allPagesHH)
 						})
 						.finally(() => setFetching(false))
 					}
-			})
-
-
-			// axios.get(`https://api.hh.ru/vacancies?clusters=true&text=сетевой администратор&area=113&per_page=100&page=${currentPage}`)
-			// 	// .then(res => res.json())
-			// 	.then(response => {
-			// 		setDataTable([...dataTable, ...response.data.items])
-			// 		setCurrentPage(prevState => prevState + 1)
-			// 		setTotalCount(response.data.pages)
-			// 		console.log(response)
-			// })
-			// .finally(() => setFetching(false))
+			}
 		}
 	}, [fetching])
 
-
-	
-	// useEffect(() => {
-	// 	if(fetching) {
-	// 		console.log(fetching);
-	// 		axios.get(`https://api.hh.ru/vacancies?clusters=true&text=сетевой администратор&area=113&per_page=100&page=${currentPage}`)
-	// 			// .then(res => res.json())
-	// 			.then(response => {
-	// 				setPhotos([...photos, ...response.data.items])
-	// 				setCurrentPage(prevState => prevState + 1)
-	// 				setTotalCount(response.data.pages)
-	// 				console.log(response)
-	// 		})
-	// 		.finally(() => setFetching(false))
-	// 	}
-	// }, [fetching])
-
 	useEffect(() => {
+		const scrollHandler = (e) => {
+			if(e.target.documentElement.scrollHeight - (e.target.documentElement.scrollTop + window.innerHeight) < 100 && parseInt(currentPage) <= parseInt(allPagesHH)) {
+				setFetching(true)
+				console.log("<<< СКРОЛ ОТРАБОТАЛ >>>")
+			}
+		}
 		document.addEventListener('scroll', scrollHandler)
 		return function() {
 			document.removeEventListener('scroll', scrollHandler);
 		}
 	}, [])
-
-	const scrollHandler = (e) => {
-		// if(e.target.documentElement.scrollHeight - (e.target.documentElement.scrollTop + window.innerHeight) < 100 && currentPage <= allPagesHH) {
-		if(e.target.documentElement.scrollHeight - (e.target.documentElement.scrollTop + window.innerHeight) < 100 & currentPage <= allPagesHH) {
-			setFetching(true)
-			console.log("ia true")
-			// reqData()
-		}
-	}
-	
-
-	function pageUpHandlerTest() {
-		console.log(currentPage);
-		// console.log(photos);
-		// setFetching(true)
-		// axios.get(`https://api.hh.ru/vacancies?clusters=true&text=водитель&area=113&per_page=100&page=${currentPage}`)
-		// 	.then(response => {setPhotos(...photos, ...response.data.items)}, setCurrentPage(e => e+1))
-				
-	}
-
-
-
-//получаем все названия вакансий по группам
-	useEffect(() => {
-        fetch(`https://api.hh.ru/professional_roles`)
-            .then(res=> res.json())
-            .then(data => setProfRoleHH(data.categories));
-    }, [])
-
-//получаем все названия вакансий без группировки:
-	useEffect(() => {
-        function gettingAll() {
-            const allProfRoleHH = [];
-            profRoleHH.forEach(elem => {
-                allProfRoleHH.push(elem.roles)
-            })
-            const allRole = [];
-            for (let i = 0; i < allProfRoleHH.length; i++) {
-                allProfRoleHH[i].forEach(e => {
-                    allRole.push(e)
-                })
-            }
-            setAllProfRoleHH(allRole)
-        }gettingAll()
-    }, [profRoleHH])
 
 //вывод подсказок при вводе в поле поиска:
 	const filteredRole = allProfRoleHH.filter(elem => {
@@ -158,24 +127,10 @@ function Test() {
 
 //запрос на получение данных с hh
     function reqData() {
-		// if(fetching) {
-		// 	console.log(fetching);
-		// 	axios.get(`https://api.hh.ru/vacancies?clusters=true&text=сетевой администратор&area=113&per_page=100&page=${currentPage}`)
-		// 		// .then(res => res.json())
-		// 		.then(response => {
-		// 			setDataTable([...dataTable, ...response.data.items])
-		// 			setCurrentPage(prevState => prevState + 1)
-		// 			setTotalCount(response.data.pages)
-		// 			console.log(response)
-		// 	})
-		// 	.finally(() => setFetching(false))
-		// } else {
-
-		
         // console.log("сейчас reqSchedule", reqSchedule)
-        // console.log("сейчас reqInput", reqInput)
+        console.log("сейчас reqInput", reqInput)
         // console.log("сейчас reqArea", reqArea)
-
+		setCurrentPage(1);
         let id_area = "113";
         if(reqArea === "undefined") {
             return (id_area = 113, setIdArea(113));
@@ -188,33 +143,62 @@ function Test() {
         }
 
         let id_rol = 1;
-		setIdRole(1);
-        allProfRoleHH.forEach(elem => {
-            if(elem.name.toLowerCase() === reqInput.toLowerCase()){
-                return (id_rol = elem.id, setIdRole(elem.id))
-            }
-        })
-        schedule_db.forEach(elem => {
-            if(elem.name === reqSchedule) {
-                fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_rol}&area=${id_area}&per_page=100&page=0&schedule=${elem.id}`)
-                    .then(res => res.json())
-                    .then(data => {
-						setDataHH(data)
-						setAllPagesHH(data.pages)
-						setDataTable(data.items)
-					})
-            }
-            if(reqSchedule === undefined || reqSchedule === "График не задан") {
-                fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_rol}&area=${id_area}&per_page=100&page=0`)
-                    .then(res => res.json())
-                    .then(data => {
-						setDataHH(data)
-						setAllPagesHH(data.pages)
-						setDataTable(data.items)
-					})
-            }
-        })
-	// }
+
+		const even = (element) => element.name.toLowerCase() !== reqInput.toLowerCase();
+		if(allProfRoleHH.some(even)) {
+			setIdRole(undefined)
+			schedule_db.forEach(elem => {
+				if(reqSchedule === undefined || reqSchedule === "График не задан") {
+					setIdSchedule(undefined)
+					fetch(`https://api.hh.ru/vacancies?clusters=true&text=${reqInput}&area=${id_area}&per_page=100&page=0`)
+						.then(res => res.json())
+						.then(data => {
+							setDataHH(data)
+							setAllPagesHH(data.pages)
+							setDataTable(data.items)
+						})
+				}
+				if(elem.name === reqSchedule) {
+					setIdSchedule(elem.id)
+					fetch(`https://api.hh.ru/vacancies?clusters=true&text=${reqInput}&area=${id_area}&per_page=100&page=0&schedule=${elem.id}`)
+						.then(res => res.json())
+						.then(data => {
+							setDataHH(data)
+							setAllPagesHH(data.pages)
+							setDataTable(data.items)
+						})
+				}
+			})
+		} else {
+			allProfRoleHH.forEach(elem => {
+				if(elem.name.toLowerCase() === reqInput.toLowerCase()) {
+					id_rol = elem.id
+					setIdRole(elem.id)
+					schedule_db.forEach(elem => {
+						if(reqSchedule === undefined || reqSchedule === "График не задан") {
+							setIdSchedule(undefined)
+							fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_rol}&area=${id_area}&per_page=100&page=0`)
+								.then(res => res.json())
+								.then(data => {
+									setDataHH(data)
+									setAllPagesHH(data.pages)
+									setDataTable(data.items)
+								})
+						}
+						if(elem.name === reqSchedule) {
+							setIdSchedule(elem.id)
+							fetch(`https://api.hh.ru/vacancies?clusters=true&professional_role=${id_rol}&area=${id_area}&per_page=100&page=0&schedule=${elem.id}`)
+								.then(res => res.json())
+								.then(data => {
+									setDataHH(data)
+									setAllPagesHH(data.pages)
+									setDataTable(data.items)
+								})
+						}
+					})	
+				}
+			})
+		}  
     }
 
 // поиск по таблице:
@@ -397,7 +381,6 @@ function Test() {
 				</div>
 			</main>
 			<button className="btnPageUp" type="button" onClick={pageUpHandler}>наверх</button>
-			{/* <button className="btnPageUpTest" type="button" onClick={setBtnTest(true)}>дальше</button> */}
 			{dataTable.length === 0 ? <div>
 			<a className="coop" href='https://krasintegra.ru/' target="_blank">&#169; 2023 krasintegra.ru</a>
 			<p className="version">v. 1.0.1</p> </div> : null}
