@@ -1,6 +1,7 @@
 # job-search-hh
 
 Приложение для поиска и сортировки вакансий сайта hh.ru
+( https://api.hh.ru/openapi/redoc )
 
 
 
